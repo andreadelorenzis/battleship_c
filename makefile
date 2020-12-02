@@ -1,2 +1,2 @@
-battaglia_navale: battaglia_navale.c makefile
-	gcc -Wall -O battaglia_navale.c -o battaglia_navale
+battleship: battleship.c makefile
+	gcc -Wall -O battleship.c -o battleship
