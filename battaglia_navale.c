@@ -62,7 +62,7 @@ void stampa_matrice(int matrice[][8])
 	}
 }
 
-void posizione_navi(int matrice[][8])
+void posiziona_navi(int matrice[][8])
 {
 	for(int i = 0; i < NUMERO_NAVI; i++)
 	{
@@ -86,9 +86,11 @@ void posizione_navi(int matrice[][8])
 			lettera_riga = posizione[0];
 			numero_colonna = atoi(&posizione[1]);
 			
+			getchar(); // remove the \n character after the first scanf
+			
 			// scegliere il verso della nave
 			
-			printf("Scegli il verso della nave (sù = w, giù = s, sinistra = a, destra = d) w/a/s/d?: ");
+			printf("Scegli il verso della nave (su' = w, giu' = s, sinistra = a, destra = d) w/a/s/d?: ");
 			scanf("%c",
 			      &direzione);
 			
@@ -97,32 +99,31 @@ void posizione_navi(int matrice[][8])
 			riga = lettera_riga - 'a';
 			colonna = numero_colonna - 1;
 			
-			// inserire ogni casella appartenente alla nave nella matrice
+			// inserire nella matrice le caselle appartenenti alla nava, identificate attraverso la lunghezza della nave
 			
-			int conteggio2 = navi[i].numero;
-			int i = riga;
-			int j = colonna;
+			int conteggio2 = navi[i].dimensione;
 			while(conteggio2 > 0)
 			{
-				matrice[i][j] = navi[i].numero;
+				matrice[riga][colonna] = navi[i].dimensione;
 				if(direzione == 'w')
 				{
-					i--;
+					riga--;
 				}
 				else if(direzione == 's')
 				{
-					i++;
+					riga++;
 				}
 				else if(direzione == 'a')
 				{
-					j--;
+					colonna--;
 				}
 				else if(direzione == 'd')
 				{
-					j++;
+					colonna++;
 				}
 				conteggio2--;
 			}
+			stampa_matrice(matrice);
 			
 			conteggio--;
 		}
@@ -142,8 +143,15 @@ void posizione_navi(int matrice[][8])
 */
 int main(void)
 {
-	int tabella[8][8] = 
+	int tabella[8][8];
+	for(int i = 0; i < 8; i++)
 	{
+		for(int j = 0; j < 8; j++)
+		{
+			tabella[i][j] = 0;
+		}
+	}
+	/*{
 		{0, 4, 4, 4, 4, 0, 0, 0},
 		{0, 0, 0, 0, 0, 0, 0, 0},
 		{0, 0, 0, 0, 0, 0, 0, 0},
@@ -152,8 +160,8 @@ int main(void)
 		{0, 3, 0, 0, 0, 0, 0, 0},
 		{0, 0, 0, 0, 1, 0, 1, 0},
 		{0, 0, 0, 0, 0, 0, 0, 0}
-	};
+	};*/
 	stampa_matrice(tabella);
-	posizione_navi(tabella);
+	posiziona_navi(tabella);
 	return (0);
 }
