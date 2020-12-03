@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define NUMERO_NAVI 4
+#define NUMERO_NAVI 1
 
 struct nave
 {
@@ -19,7 +19,7 @@ struct nave navi[] =
 		"portaerei",
 		4,
 		1
-	},
+	}/*,
 	{
 		"corazzata",
 		"corazzate",
@@ -37,7 +37,7 @@ struct nave navi[] =
 		"sommergibili",
 		1,
 		2
-	}
+	}*/
 };
 
 void stampa_disp_iniziale(int matrice[][8])
@@ -60,11 +60,14 @@ void stampa_disp_iniziale(int matrice[][8])
 		}
 		printf("\n       ---------------------------------\n");
 	}
+	printf("\n");
 }
 
-void stampa_tabella(char matrice[][8])
+void stampa_tabella(char matrice[][8], int giocatore)
 {
-	printf("\n       ---------------------------------\n");
+	printf("       -------------Player%d-------------\n",
+		   giocatore);
+	printf("       ---------------------------------\n");
 	for(int i = 0; i < 8; i++)
 	{
 		for(int j = 0; j < 8; j++)
@@ -83,6 +86,7 @@ void stampa_tabella(char matrice[][8])
 		}
 		printf("\n       ---------------------------------\n");
 	}
+	printf("\n");
 }
 
 void prendi_posizione(int *riga, int *colonna)
@@ -104,6 +108,8 @@ void prendi_posizione(int *riga, int *colonna)
 
 void posiziona_navi(int matrice[][8], int giocatore)
 {
+	char risposta_continuazione; 
+	
 	for(int i = 0; i < NUMERO_NAVI; i++)
 	{
 		int  riga;		 
@@ -127,6 +133,7 @@ void posiziona_navi(int matrice[][8], int giocatore)
 				   giocatore);
 			scanf("%c",
 			      &direzione);
+			getchar();
 			
 			// inserire nella matrice le caselle appartenenti alla nava, identificate attraverso la lunghezza della nave
 			
@@ -157,6 +164,12 @@ void posiziona_navi(int matrice[][8], int giocatore)
 			conteggio--;
 		}
 	}
+	printf("Continuare? s/n?");
+	scanf("%c", 
+		  &risposta_continuazione);
+		  
+	if(risposta_continuazione == 's')
+		system("cls");
 }
 
 void spara_colpo(int disp_iniziale[][8], char tabella[][8], int giocatore)
@@ -170,6 +183,39 @@ void spara_colpo(int disp_iniziale[][8], char tabella[][8], int giocatore)
 		tabella[riga][colonna] = 'c';     // casella nave colpita
 	else 
 		tabella[riga][colonna] = 'n';	  // casella vuota colpita
+}
+
+// controlla se il numero delle caselle colpite nella tabella colpi del player e uguale al numero delle caselle nave disposte. Se e' così, tutte le navi sono state affondate
+// e restituisce 1, altrimenti 0.
+
+int controlla_vittoria(char tabella[][8], int giocatore)
+{
+	// conto caselle nave dell'avversario colpite dal giocatore
+	int caselle_nave_colpite = 0;
+	int caselle_nave_totali = 0;
+	for(int i = 0; i < 8; i++)
+	{
+		for(int j = 0; j < 8; j++)
+		{
+			if(tabella[i][j] == 'c')
+				caselle_nave_colpite++;
+		}
+	}
+	// conto tutte le caselle appartententi ad una nave
+	for(int i = 0; i < NUMERO_NAVI; i++)
+	{
+		caselle_nave_totali += navi[i].numero * navi[i].dimensione;
+	}
+	// comparo i 2 numeri
+	if(caselle_nave_colpite == caselle_nave_totali)
+	{
+		system("cls");
+		stampa_tabella(tabella, giocatore);
+		printf("Partita finita! Player %d ha distrutto tutte le navi dell'avversario!\n",
+			   giocatore);
+		return 1;
+	}
+	return 0;
 }
 
 
@@ -201,8 +247,11 @@ int main(void)
 		{
 			disp_iniziale_p1[i][j] = 0;
 			disp_iniziale_p2[i][j] = 0;
+			tabella_p1[i][j] = 0;
+			tabella_p2[i][j] = 0;
 		}
 	}
+	system("cls");
 	stampa_disp_iniziale(disp_iniziale_p1);
 	posiziona_navi(disp_iniziale_p1, 1);
 	stampa_disp_iniziale(disp_iniziale_p2);
@@ -212,14 +261,20 @@ int main(void)
 	{
 		if(giocatore_corrente == 1)
 		{
+			stampa_tabella(tabella_p1, giocatore_corrente);
 			spara_colpo(disp_iniziale_p2, tabella_p1, giocatore_corrente);
-			stampa_tabella(tabella_p1);
+			stampa_tabella(tabella_p1, giocatore_corrente);
+			vittoria = controlla_vittoria(tabella_p1, giocatore_corrente);
+			printf("\n\n\n\n\n");
 			giocatore_corrente = 2;
 		}
 		else
 		{
+			stampa_tabella(tabella_p2, giocatore_corrente);
 			spara_colpo(disp_iniziale_p1, tabella_p2, giocatore_corrente);
-			stampa_tabella(tabella_p2);
+			stampa_tabella(tabella_p2, giocatore_corrente);
+			vittoria = controlla_vittoria(tabella_p2, giocatore_corrente);
+			printf("\n\n\n\n\n");
 			giocatore_corrente = 1;
 		}
 	}
