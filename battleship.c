@@ -18,7 +18,7 @@ struct nave navi[] =
 		"portaerei",
 		"portaerei",
 		4,
-		1
+		2
 	}/*,
 	{
 		"corazzata",
@@ -95,20 +95,37 @@ void prendi_posizione(int *riga, int *colonna)
 	char lettera_riga;   
 	int  numero_colonna;
 	
+	do
+	{	
 		scanf("%s", 
 			  posizione);
 		lettera_riga = posizione[0];
 		numero_colonna = atoi(&posizione[1]);
 		
-		// trasformare lettera riga e numero colonna nei rispettivi indici della matrice
-		
-		*riga = lettera_riga - 'a';
-		*colonna = numero_colonna - 1;
+		if(strlen(posizione) > 2                     ||
+		   (lettera_riga < 97 || lettera_riga > 104) ||
+		   (numero_colonna < 1 || numero_colonna > 8))
+		{
+			printf("Posizione non valida. Riprova: ");
+		}
+		else 
+		{
+			
+			// trasformare lettera riga e numero colonna nei rispettivi indici della matrice
+			
+			*riga = lettera_riga - 'a';
+			*colonna = numero_colonna - 1;	
+		}
+		//while(getchar() != '\n');
+	}
+	while((strlen(posizione) != 2)                  ||
+		  (lettera_riga < 97 || lettera_riga > 104) ||
+		  (numero_colonna < 1 || numero_colonna > 8));
 }
 
 void posiziona_navi(int matrice[][8], int giocatore)
 {
-	char risposta_continuazione; 
+	char risposta_continuazione = 's';
 	
 	for(int i = 0; i < NUMERO_NAVI; i++)
 	{
@@ -116,6 +133,9 @@ void posiziona_navi(int matrice[][8], int giocatore)
 		int  colonna;     
 		char direzione;
 		int conteggio = navi[i].numero;	
+		
+		system("cls");
+		stampa_disp_iniziale(matrice);
 	
 		while(conteggio > 0)
 		{
@@ -159,17 +179,35 @@ void posiziona_navi(int matrice[][8], int giocatore)
 				}
 				conteggio2--;
 			}
+			system("cls");
 			stampa_disp_iniziale(matrice);
-			
 			conteggio--;
 		}
 	}
-	printf("Continuare? s/n?");
-	scanf("%c", 
-		  &risposta_continuazione);
-		  
-	if(risposta_continuazione == 's')
-		system("cls");
+				do{
+				printf("Continuare? s/n?: ");
+				scanf("%c", 
+					  &risposta_continuazione);	
+				if(risposta_continuazione != 's' && risposta_continuazione != 'n')
+					printf("Valore non valido.\n");	
+				while(getchar() != '\n');
+			}
+			while(risposta_continuazione != 's' && risposta_continuazione != 'n');
+			if(risposta_continuazione == 'n')
+			{
+				// riazzerare tabella
+				
+				for(int i = 0; i < 8; i++)
+				{
+					for(int j = 0; j < 8; j++)
+					{
+						matrice[i][j] = 0;
+					}
+				}
+				posiziona_navi(matrice, giocatore);
+			}
+			else 
+				system("cls");
 }
 
 void spara_colpo(int disp_iniziale[][8], char tabella[][8], int giocatore)
@@ -251,10 +289,8 @@ int main(void)
 			tabella_p2[i][j] = 0;
 		}
 	}
-	system("cls");
-	stampa_disp_iniziale(disp_iniziale_p1);
+
 	posiziona_navi(disp_iniziale_p1, 1);
-	stampa_disp_iniziale(disp_iniziale_p2);
 	posiziona_navi(disp_iniziale_p2, 2);
 	
 	while(!vittoria)
