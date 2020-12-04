@@ -123,6 +123,81 @@ void prendi_posizione(int *riga, int *colonna)
 		  (numero_colonna < 1 || numero_colonna > 8));
 }
 
+// controlla il buon posizionamento della nave, che deve essere all'interno della tabella e non deve collidere con altre navi già posizionate dal giocatore
+
+int controlla_posizionamento(int matrice[][8],
+							 int riga,
+							 int colonna,
+							 int lunghezza_nave,
+							 int direzione)
+{
+	int dentro = 0;
+	int nessuna_collisione = 0;
+	int caselle_vuote = 0;
+	
+	// controllo che la nave non esca fuori dalla tabella
+	
+	switch(direzione)
+	{
+		// sopra
+		
+		case 'w':
+			if(riga - (lunghezza_nave - 1) >= 0)
+				dentro = 1;
+			break;
+			
+		// sotto
+		
+		case 's':
+			if(riga + (lunghezza_nave - 1) <= 7)
+				dentro = 1;
+			break;
+			
+		// destra 
+			
+		case 'd':
+			if(colonna + (lunghezza_nave - 1) <= 7)  
+				dentro = 1;
+			break;
+			
+		// sinistra
+		
+		case 'a':
+			if(colonna - (lunghezza_nave - 1) >= 0)
+				dentro = 1;
+			break;			
+	}
+	
+	// controllo che la nave non collida con altre navi già posizionate
+	
+	for(int i = 0; i < lunghezza_nave; i++)
+	{
+		if(matrice[riga][colonna] == 0)
+			caselle_vuote++;
+		
+		switch(direzione)
+		{
+			case 'w':
+				riga--;
+				break;
+			case 's':
+				riga++;
+				break;
+			case 'a':
+				colonna--;
+				break;
+			case 'd':
+				colonna++;
+				break;
+		}
+	}
+	
+	if(caselle_vuote == lunghezza_nave)
+		nessuna_collisione = 1;
+	
+	return dentro && nessuna_collisione;
+}
+
 void posiziona_navi(int matrice[][8], int giocatore)
 {
 	char risposta_continuazione = 's';
@@ -132,6 +207,7 @@ void posiziona_navi(int matrice[][8], int giocatore)
 		int  riga;		 
 		int  colonna;     
 		char direzione;
+		int posizione_valida;
 		int conteggio = navi[i].numero;	
 		
 		system("cls");
@@ -139,46 +215,71 @@ void posiziona_navi(int matrice[][8], int giocatore)
 	
 		while(conteggio > 0)
 		{
-			// scegliere la casella di partenza della nave
-			printf("Player %d posiziona %d %s: ",
-					giocatore,
-					conteggio,
-					conteggio == 1 ? navi[i].nome_plurale : navi[i].nome_singolare);
-			prendi_posizione(&riga, &colonna);
-			getchar(); // remove the \n character after the first scanf
-			
-			// scegliere il verso della nave
-			
-			printf("Player %d scegli il verso della nave (su' = w, giu' = s, sinistra = a, destra = d) w/a/s/d?: ",
-				   giocatore);
-			scanf("%c",
-			      &direzione);
-			getchar();
+			do
+			{
+				// scegliere la casella di partenza della nave
+				
+				printf("Player %d posiziona %d %s: ",
+						giocatore,
+						conteggio,
+						conteggio == 1 ? navi[i].nome_plurale : navi[i].nome_singolare);
+				prendi_posizione(&riga, &colonna);
+				getchar(); // remove the \n character after the first scanf
+				
+				// scegliere il verso della nave
+				
+				do
+				{
+					printf("Player %d scegli il verso della nave (su' = w, giu' = s, sinistra = a, destra = d) w/a/s/d?: ",
+					   giocatore);
+					scanf("%c",
+						&direzione);
+					if((direzione != 'w') && 
+					   (direzione != 'a') && 
+					   (direzione != 's') && 
+					   (direzione != 'd'))
+						printf("Direzione non valida. Riprova.\n");
+					  
+					while(getchar() != '\n');
+				}
+				while((direzione != 'w') && 
+					  (direzione != 'a') && 
+					  (direzione != 's') && 
+					  (direzione != 'd'));
+					  
+				posizione_valida = controlla_posizionamento(matrice,
+															riga, 
+															colonna, 
+															navi[i].dimensione, 
+															direzione);
+				if(!posizione_valida)
+					printf("Posizione non valida. Inserire di nuovo la posizione.\n");
+			}
+			while(!posizione_valida);
 			
 			// inserire nella matrice le caselle appartenenti alla nava, identificate attraverso la lunghezza della nave
-			
-			int conteggio2 = navi[i].dimensione;
-			while(conteggio2 > 0)
+
+			for(int j = 0; j < navi[i].dimensione; j++)
 			{
 				matrice[riga][colonna] = navi[i].dimensione;
-				if(direzione == 'w')
+				
+				switch(direzione)
 				{
-					riga--;
+					case 'w':
+						riga--;
+						break;
+					case 's':
+						riga++;
+						break;
+					case 'a':
+						colonna--;
+						break;
+					case 'd':
+						colonna++;
+						break;
 				}
-				else if(direzione == 's')
-				{
-					riga++;
-				}
-				else if(direzione == 'a')
-				{
-					colonna--;
-				}
-				else if(direzione == 'd')
-				{
-					colonna++;
-				}
-				conteggio2--;
 			}
+			
 			system("cls");
 			stampa_disp_iniziale(matrice);
 			conteggio--;
