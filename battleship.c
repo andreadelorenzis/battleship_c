@@ -2,45 +2,64 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define NUMERO_NAVI 1
+#define SHIP_TYPES 1
 
-struct nave
+struct ship
 {
-	char *nome_plurale;
-	char *nome_singolare;
-	int dimensione;
-	int numero;
+	char *name_plural;
+	char *name_singular;
+	int dimension;
+	int number;
 };
 
-struct nave navi[] =
+struct ship ships[] =
 {
 	{
-		"portaerei",
-		"portaerei",
+		"aircraft carrier",
+		"aircraft carriers",
 		4,
 		2
 	}/*,
 	{
-		"corazzata",
-		"corazzate",
+		"ironclad",
+		"ironclads",
 		3,
 		2
 	},
 	{
-		"incrociatore",
-		"incrociatori",
+		"cruiser",
+		"cruisers",
 		2,
 		3
 	},
 	{
-		"sommergibile",
-		"sommergibili",
+		"submarine",
+		"submarines",
 		1,
 		2
 	}*/
 };
 
-void stampa_disp_iniziale(int matrice[][8])
+/*
+   Prints a table with the ships placed. A ship-box is represented in the table with its dimension n, and the same ship-box
+   is repetead n-times in some direction to form a full ship. This function is called at the beginning of the game,
+   to place the ships of both players.
+           
+		   1  2  3  4  5  6  7  8
+   		A {0, 0, 0, 0, 0, 0, 0, 3},
+		B {0, 0, 0, 0, 0, 0, 0, 3},
+		C {0, 0, 0, 0, 0, 0, 0, 3},
+		D {0, 4, 4, 4, 4, 0, 0, 0},
+		E {0, 0, 0, 0, 0, 0, 0, 0},
+		F {0, 0, 0, 0, 0, 1, 0, 0},
+		G {0, 0, 0, 0, 0, 0, 0, 0},
+		H {0, 0, 0, 0, 0, 0, 0, 0},
+		
+	In this example, the table contains 3 ships. A ship of size for horizzontally placed, a ship of size 3 vertically placed
+	and a ship of size 1.
+*/
+
+void print_ships(int matrix[][8])
 {
 	printf("\n       ---------------------------------\n");
 	for(int i = 0; i < 8; i++)
@@ -49,9 +68,9 @@ void stampa_disp_iniziale(int matrice[][8])
 		{
 			if(j == 0)
 				printf("       ");
-			if(matrice[i][j] > 0)
+			if(matrix[i][j] > 0)
 				printf("| %d ", 
-					   matrice[i][j]);
+					   matrix[i][j]);
 			else
 				printf("|   ");
 			
@@ -63,10 +82,14 @@ void stampa_disp_iniziale(int matrice[][8])
 	printf("\n");
 }
 
-void stampa_tabella(char matrice[][8], int giocatore)
+/*
+	Prints a table with the shots fired by the player. A good shot is represented by a 'X' and a missed shot by a 'o'.
+*/
+
+void print_shots_table(char matrix[][8], int player)
 {
 	printf("       -------------Player%d-------------\n",
-		   giocatore);
+		   player);
 	printf("       ---------------------------------\n");
 	for(int i = 0; i < 8; i++)
 	{
@@ -74,9 +97,9 @@ void stampa_tabella(char matrice[][8], int giocatore)
 		{
 			if(j == 0)
 				printf("       ");
-			if(matrice[i][j] == 'c')
+			if(matrix[i][j] == 'x')
 				printf("| X ");
-			else if(matrice[i][j] == 'n')
+			else if(matrix[i][j] == 'o')
 				printf("| o ");
 			else
 				printf("|   ");
@@ -89,330 +112,352 @@ void stampa_tabella(char matrice[][8], int giocatore)
 	printf("\n");
 }
 
-void prendi_posizione(int *riga, int *colonna)
+/*
+	Takes the position by the player. The user is asked for a string containing a letter A-H and a number 1-8. 
+*/
+
+void take_position(int *row, int *column)
 {
-	char posizione[20];
-	char lettera_riga;   
-	int  numero_colonna;
+	char position[20];
+	char row_letter;   
+	int  column_number;
 	
 	do
 	{	
 		scanf("%s", 
-			  posizione);
-		lettera_riga = posizione[0];
-		numero_colonna = atoi(&posizione[1]);
+			  position);
+		row_letter = position[0];
+		column_number = atoi(&position[1]);
 		
-		if(strlen(posizione) > 2                     ||
-		   (lettera_riga < 97 || lettera_riga > 104) ||
-		   (numero_colonna < 1 || numero_colonna > 8))
+		if(strlen(position) > 2                     ||
+		  (row_letter < 97 || row_letter > 104) ||
+		  (column_number < 1 || column_number > 8))
 		{
-			printf("Posizione non valida. Riprova: ");
+			printf("Position not valid. Retry: ");
 		}
 		else 
 		{
 			
 			// trasformare lettera riga e numero colonna nei rispettivi indici della matrice
 			
-			*riga = lettera_riga - 'a';
-			*colonna = numero_colonna - 1;	
+			*row = row_letter - 'a';
+			*column = column_number - 1;	
 		}
 		//while(getchar() != '\n');
 	}
-	while((strlen(posizione) != 2)                  ||
-		  (lettera_riga < 97 || lettera_riga > 104) ||
-		  (numero_colonna < 1 || numero_colonna > 8));
+	while((strlen(position) != 2)                  ||
+		  (row_letter < 97 || row_letter > 104) ||
+		  (column_number < 1 || column_number > 8));
 }
 
-// controlla il buon posizionamento della nave, che deve essere all'interno della tabella e non deve collidere con altre navi già posizionate dal giocatore
+/*
+	Checks the validity of the ship placement. The ships must be inside the table e and they shouldn't collide with
+	other ships already placed by the player.
+*/
 
-int controlla_posizionamento(int matrice[][8],
-							 int riga,
-							 int colonna,
-							 int lunghezza_nave,
-							 int direzione)
+int check_positioning(int matrix[][8],
+							 int row,
+							 int column,
+							 int ship_length,
+							 int direction)
 {
-	int dentro = 0;
-	int nessuna_collisione = 0;
-	int caselle_vuote = 0;
+	int is_inside = 0;
+	int no_collisions = 0;
+	int empty_boxes = 0;
 	
-	// controllo che la nave non esca fuori dalla tabella
+	// checks that the ship is within the boundaries of the table
 	
-	switch(direzione)
+	switch(direction)
 	{
-		// sopra
+		// up
 		
 		case 'w':
-			if(riga - (lunghezza_nave - 1) >= 0)
-				dentro = 1;
+			if(row - (ship_length - 1) >= 0)
+				is_inside = 1;
 			break;
 			
-		// sotto
+		// down
 		
 		case 's':
-			if(riga + (lunghezza_nave - 1) <= 7)
-				dentro = 1;
+			if(row + (ship_length - 1) <= 7)
+				is_inside = 1;
 			break;
 			
-		// destra 
+		// right 
 			
 		case 'd':
-			if(colonna + (lunghezza_nave - 1) <= 7)  
-				dentro = 1;
+			if(column + (ship_length - 1) <= 7)  
+				is_inside = 1;
 			break;
 			
-		// sinistra
+		// left
 		
 		case 'a':
-			if(colonna - (lunghezza_nave - 1) >= 0)
-				dentro = 1;
+			if(column - (ship_length - 1) >= 0)
+				is_inside = 1;
 			break;			
 	}
 	
-	// controllo che la nave non collida con altre navi già posizionate
+	// checks that the ship doesn't collide with other ships already placed
 	
-	for(int i = 0; i < lunghezza_nave; i++)
+	for(int i = 0; i < ship_length; i++)
 	{
-		if(matrice[riga][colonna] == 0)
-			caselle_vuote++;
+		if(matrix[row][column] == 0)
+			empty_boxes++;
 		
-		switch(direzione)
+		switch(direction)
 		{
 			case 'w':
-				riga--;
+				row--;
 				break;
 			case 's':
-				riga++;
+				row++;
 				break;
 			case 'a':
-				colonna--;
+				column--;
 				break;
 			case 'd':
-				colonna++;
+				column++;
 				break;
 		}
 	}
 	
-	if(caselle_vuote == lunghezza_nave)
-		nessuna_collisione = 1;
+	if(empty_boxes == ship_length)
+		no_collisions = 1;
 	
-	return dentro && nessuna_collisione;
+	return is_inside && no_collisions;
 }
 
-void posiziona_navi(int matrice[][8], int giocatore)
+/*
+	Inserts the ships identifiers inside the table. 
+*/
+
+void place_ships(int matrix[][8], int player)
 {
-	char risposta_continuazione = 's';
+	char continuation_answer = 's';
 	
-	for(int i = 0; i < NUMERO_NAVI; i++)
+	for(int i = 0; i < SHIP_TYPES; i++)
 	{
-		int  riga;		 
-		int  colonna;     
-		char direzione;
-		int posizione_valida;
-		int conteggio = navi[i].numero;	
+		int  row;		 
+		int  column;     
+		char direction;
+		int position_is_valid;
+		int count = ships[i].number;	
 		
 		system("cls");
-		stampa_disp_iniziale(matrice);
+		print_ships(matrix);
 	
-		while(conteggio > 0)
+		while(count)
 		{
 			do
 			{
-				// scegliere la casella di partenza della nave
+				// choose the starting square for the ship
 				
-				printf("Player %d posiziona %d %s: ",
-						giocatore,
-						conteggio,
-						conteggio == 1 ? navi[i].nome_plurale : navi[i].nome_singolare);
-				prendi_posizione(&riga, &colonna);
+				printf("Player %d place %d %s: ",
+						player,
+						count,
+						count == 1 ? ships[i].name_plural : ships[i].name_singular);
+				take_position(&row, &column);
 				getchar(); // remove the \n character after the first scanf
 				
-				// scegliere il verso della nave
+				// choose the direction of the ship
 				
 				do
 				{
-					printf("Player %d scegli il verso della nave (su' = w, giu' = s, sinistra = a, destra = d) w/a/s/d?: ",
-					   giocatore);
+					printf("Player %d choose the direction of the ship.\n",
+					   player);
+					   printf("up = w, down = s, left = a, right = d - w/a/s/d?: ");
 					scanf("%c",
-						&direzione);
-					if((direzione != 'w') && 
-					   (direzione != 'a') && 
-					   (direzione != 's') && 
-					   (direzione != 'd'))
-						printf("Direzione non valida. Riprova.\n");
+						&direction);
+					if((direction != 'w') && 
+					   (direction != 'a') && 
+					   (direction != 's') && 
+					   (direction != 'd'))
+						printf("Direction not valid. Retry.\n");
 					  
 					while(getchar() != '\n');
 				}
-				while((direzione != 'w') && 
-					  (direzione != 'a') && 
-					  (direzione != 's') && 
-					  (direzione != 'd'));
+				while((direction != 'w') && 
+					  (direction != 'a') && 
+					  (direction != 's') && 
+					  (direction != 'd'));
 					  
-				posizione_valida = controlla_posizionamento(matrice,
-															riga, 
-															colonna, 
-															navi[i].dimensione, 
-															direzione);
-				if(!posizione_valida)
-					printf("Posizione non valida. Inserire di nuovo la posizione.\n");
-			}
-			while(!posizione_valida);
-			
-			// inserire nella matrice le caselle appartenenti alla nava, identificate attraverso la lunghezza della nave
-
-			for(int j = 0; j < navi[i].dimensione; j++)
-			{
-				matrice[riga][colonna] = navi[i].dimensione;
+				// checks that the positioning of the ships is valid 
 				
-				switch(direzione)
+				position_is_valid = check_positioning(matrix,
+															row, 
+															column, 
+															ships[i].dimension, 
+															direction);
+				if(!position_is_valid)
+					printf("Position not valid. Insert the position again.\n");
+			}
+			while(!position_is_valid);
+			
+			// insert in the table the ship-boxes, represented by the size of the ships along the direction
+
+			for(int j = 0; j < ships[i].dimension; j++)
+			{
+				matrix[row][column] = ships[i].dimension;
+				
+				switch(direction)
 				{
 					case 'w':
-						riga--;
+						row--;
 						break;
 					case 's':
-						riga++;
+						row++;
 						break;
 					case 'a':
-						colonna--;
+						column--;
 						break;
 					case 'd':
-						colonna++;
+						column++;
 						break;
 				}
 			}
 			
 			system("cls");
-			stampa_disp_iniziale(matrice);
-			conteggio--;
+			print_ships(matrix);
+			count--;
 		}
 	}
-				do{
-				printf("Continuare? s/n?: ");
+				
+			// ask if the player wants to continue after with his placement of the ships. If not, the program reset the table and 
+			// recall the function place_ships()
+				
+			do{
+				printf("Continue? y/n?: ");
 				scanf("%c", 
-					  &risposta_continuazione);	
-				if(risposta_continuazione != 's' && risposta_continuazione != 'n')
-					printf("Valore non valido.\n");	
+					  &continuation_answer);	
+				if(continuation_answer != 'y' && continuation_answer != 'n')
+					printf("Answer not valid. Retry.\n");	
 				while(getchar() != '\n');
 			}
-			while(risposta_continuazione != 's' && risposta_continuazione != 'n');
-			if(risposta_continuazione == 'n')
+			while(continuation_answer != 'y' && continuation_answer != 'n');
+			if(continuation_answer == 'n')
 			{
-				// riazzerare tabella
+				
+				// reset table and call this function again
 				
 				for(int i = 0; i < 8; i++)
 				{
 					for(int j = 0; j < 8; j++)
 					{
-						matrice[i][j] = 0;
+						matrix[i][j] = 0;
 					}
 				}
-				posiziona_navi(matrice, giocatore);
+				place_ships(matrix, player);
 			}
 			else 
 				system("cls");
 }
 
-void spara_colpo(int disp_iniziale[][8], char tabella[][8], int giocatore)
+/*
+	Asks the player the position of the shot, and add the result in the shots table
+*/
+
+void shoot_shot(int initial_placement[][8], char shots_table[][8], int player)
 {
-	int riga,
-		colonna;
-	printf("Player %d scegli la casella dove sparare il colpo: ",
-		   giocatore);
-	prendi_posizione(&riga, &colonna);
-	if(disp_iniziale[riga][colonna] > 0)
-		tabella[riga][colonna] = 'c';     // casella nave colpita
+	int row,
+		column;
+	printf("Player %d choose where to fire the shot: ",
+		   player);
+	take_position(&row, &column);
+	if(initial_placement[row][column] > 0)
+		shots_table[row][column] = 'x';     // x = ship box hit
 	else 
-		tabella[riga][colonna] = 'n';	  // casella vuota colpita
+		shots_table[row][column] = 'o';	  	// o = empty box hit
 }
 
-// controlla se il numero delle caselle colpite nella tabella colpi del player e uguale al numero delle caselle nave disposte. Se e' così, tutte le navi sono state affondate
-// e restituisce 1, altrimenti 0.
+/*
+	Iterate through all elements of the shots table. If the number of ship boxes hit is the same as the total number of ship boxes
+	return 1, 0 otherwise.
+*/
 
-int controlla_vittoria(char tabella[][8], int giocatore)
+int check_victory(char shots_table[][8], int player)
 {
-	// conto caselle nave dell'avversario colpite dal giocatore
-	int caselle_nave_colpite = 0;
-	int caselle_nave_totali = 0;
+	
+	// counts enemy's ship boxes hit
+	
+	int ship_boxes_hit = 0;
+	int ship_boxes_total = 0;
 	for(int i = 0; i < 8; i++)
 	{
 		for(int j = 0; j < 8; j++)
 		{
-			if(tabella[i][j] == 'c')
-				caselle_nave_colpite++;
+			if(shots_table[i][j] == 'x')
+				ship_boxes_hit++;
 		}
 	}
-	// conto tutte le caselle appartententi ad una nave
-	for(int i = 0; i < NUMERO_NAVI; i++)
+	
+	// counts all ship boxes placed
+	
+	for(int i = 0; i < SHIP_TYPES; i++)
 	{
-		caselle_nave_totali += navi[i].numero * navi[i].dimensione;
+		ship_boxes_total += ships[i].number * ships[i].dimension;
 	}
-	// comparo i 2 numeri
-	if(caselle_nave_colpite == caselle_nave_totali)
+
+	if(ship_boxes_hit == ship_boxes_total)
 	{
 		system("cls");
-		stampa_tabella(tabella, giocatore);
-		printf("Partita finita! Player %d ha distrutto tutte le navi dell'avversario!\n",
-			   giocatore);
+		print_shots_table(shots_table, player);
+		printf("Game over! Player %d destroyed all ships of the enemy!\n",
+			   player);
 		return 1;
 	}
 	return 0;
 }
 
-
-/*
-		{0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 4, 4, 4, 4, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 1, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0},
-*/
 int main(void)
 {
-	int disp_iniziale_p1[8][8];
-	int disp_iniziale_p2[8][8];
-	char tabella_p1[8][8];
-	char tabella_p2[8][8];
-	int giocatore_corrente = 1;
+	int initial_placement_p1[8][8];
+	int initial_placement_p2[8][8];
+	char shots_table_p1[8][8];
+	char shots_table_p2[8][8];
+	int current_player = 1;
 	
-	int vittoria = 0;
+	int victory = 0;
 	
-	// inizializzare tabella di zeri
+	// initalizes arrays
 	
 	for(int i = 0; i < 8; i++)
 	{
 		for(int j = 0; j < 8; j++)
 		{
-			disp_iniziale_p1[i][j] = 0;
-			disp_iniziale_p2[i][j] = 0;
-			tabella_p1[i][j] = 0;
-			tabella_p2[i][j] = 0;
+			initial_placement_p1[i][j] = 0;
+			initial_placement_p2[i][j] = 0;
+			shots_table_p1[i][j] = 0;
+			shots_table_p2[i][j] = 0;
 		}
 	}
 
-	posiziona_navi(disp_iniziale_p1, 1);
-	posiziona_navi(disp_iniziale_p2, 2);
+	// place ships
 	
-	while(!vittoria)
+	place_ships(initial_placement_p1, 1);
+	place_ships(initial_placement_p2, 2);
+	
+	// game loop
+	
+	while(!victory)
 	{
-		if(giocatore_corrente == 1)
+		if(current_player == 1)
 		{
-			stampa_tabella(tabella_p1, giocatore_corrente);
-			spara_colpo(disp_iniziale_p2, tabella_p1, giocatore_corrente);
-			stampa_tabella(tabella_p1, giocatore_corrente);
-			vittoria = controlla_vittoria(tabella_p1, giocatore_corrente);
+			print_shots_table(shots_table_p1, current_player);
+			shoot_shot(initial_placement_p2, shots_table_p1, current_player);
+			print_shots_table(shots_table_p1, current_player);
+			victory = check_victory(shots_table_p1, current_player);
 			printf("\n\n\n\n\n");
-			giocatore_corrente = 2;
+			current_player = 2;
 		}
 		else
 		{
-			stampa_tabella(tabella_p2, giocatore_corrente);
-			spara_colpo(disp_iniziale_p1, tabella_p2, giocatore_corrente);
-			stampa_tabella(tabella_p2, giocatore_corrente);
-			vittoria = controlla_vittoria(tabella_p2, giocatore_corrente);
+			print_shots_table(shots_table_p2, current_player);
+			shoot_shot(initial_placement_p1, shots_table_p2, current_player);
+			print_shots_table(shots_table_p2, current_player);
+			victory = check_victory(shots_table_p2, current_player);
 			printf("\n\n\n\n\n");
-			giocatore_corrente = 1;
+			current_player = 1;
 		}
 	}
 	return (0);
