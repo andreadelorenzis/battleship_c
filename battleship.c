@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #define SHIP_TYPES 1
 
@@ -18,7 +19,7 @@ struct ship ships[] =
 		"aircraft carrier",
 		"aircraft carriers",
 		4,
-		2
+		1
 	}/*,
 	{
 		"ironclad",
@@ -61,13 +62,22 @@ struct ship ships[] =
 
 void print_ships(int matrix[][8])
 {
-	printf("\n       ---------------------------------\n");
+	printf("          ");
+	for(int i = 0; i < 8; i++)
+		printf("  %d ",
+			   i + 1);
+	printf("\n          ---------------------------------\n");
 	for(int i = 0; i < 8; i++)
 	{
 		for(int j = 0; j < 8; j++)
 		{
 			if(j == 0)
+			{
 				printf("       ");
+				printf(" %c ",
+					   97 + i);
+			}
+				
 			if(matrix[i][j] > 0)
 				printf("| %d ", 
 					   matrix[i][j]);
@@ -77,7 +87,7 @@ void print_ships(int matrix[][8])
 			if(j == 7)
 				printf("|");
 		}
-		printf("\n       ---------------------------------\n");
+		printf("\n          ---------------------------------\n");
 	}
 	printf("\n");
 }
@@ -88,15 +98,23 @@ void print_ships(int matrix[][8])
 
 void print_shots_table(char matrix[][8], int player)
 {
-	printf("       -------------Player%d-------------\n",
+	printf("          -------------Player%d-------------\n\n",
 		   player);
-	printf("       ---------------------------------\n");
+	printf("          ");
+	for(int i = 0; i < 8; i++)
+		printf("  %d ",
+			   i + 1);
+	printf("\n          ---------------------------------\n");
 	for(int i = 0; i < 8; i++)
 	{
 		for(int j = 0; j < 8; j++)
 		{
 			if(j == 0)
+			{
 				printf("       ");
+				printf(" %c ",
+					   97 + i);
+			}
 			if(matrix[i][j] == 'x')
 				printf("| X ");
 			else if(matrix[i][j] == 'o')
@@ -107,7 +125,7 @@ void print_shots_table(char matrix[][8], int player)
 			if(j == 7)
 				printf("|");
 		}
-		printf("\n       ---------------------------------\n");
+		printf("\n          ---------------------------------\n");
 	}
 	printf("\n");
 }
@@ -145,8 +163,8 @@ void take_position(int *row, int *column)
 		}
 		//while(getchar() != '\n');
 	}
-	while((strlen(position) != 2)                  ||
-		  (row_letter < 97 || row_letter > 104) ||
+	while((strlen(position) != 2)                   ||
+		  (row_letter < 97 || row_letter > 104)     ||
 		  (column_number < 1 || column_number > 8));
 }
 
@@ -361,13 +379,17 @@ void shoot_shot(int initial_placement[][8], char shots_table[][8], int player)
 {
 	int row,
 		column;
+
+	print_shots_table(shots_table, player);
 	printf("Player %d choose where to fire the shot: ",
 		   player);
 	take_position(&row, &column);
+	printf("\n");
 	if(initial_placement[row][column] > 0)
 		shots_table[row][column] = 'x';     // x = ship box hit
 	else 
 		shots_table[row][column] = 'o';	  	// o = empty box hit
+	print_shots_table(shots_table, player);
 }
 
 /*
@@ -409,6 +431,22 @@ int check_victory(char shots_table[][8], int player)
 	return 0;
 }
 
+// print a seconds countdown while waiting for the specified amount of seconds
+
+void countdown(int sec)
+{
+	int wait = 1;
+	while(wait)
+	{
+		printf(" %d ", 
+			   sec);
+		if(sec == 1)
+			wait = 0; 
+		sleep(1);
+		sec--;
+	}
+}
+
 int main(void)
 {
 	int initial_placement_p1[8][8];
@@ -443,20 +481,25 @@ int main(void)
 	{
 		if(current_player == 1)
 		{
-			print_shots_table(shots_table_p1, current_player);
 			shoot_shot(initial_placement_p2, shots_table_p1, current_player);
-			print_shots_table(shots_table_p1, current_player);
 			victory = check_victory(shots_table_p1, current_player);
-			printf("\n\n\n\n\n");
+			if(!victory)
+			{
+				countdown(3);
+				system("cls");
+			}
 			current_player = 2;
 		}
 		else
 		{
-			print_shots_table(shots_table_p2, current_player);
-			shoot_shot(initial_placement_p1, shots_table_p2, current_player);
-			print_shots_table(shots_table_p2, current_player);
+		
+			shoot_shot(initial_placement_p1, shots_table_p2, current_player);	
 			victory = check_victory(shots_table_p2, current_player);
-			printf("\n\n\n\n\n");
+			if(!victory)
+			{
+				countdown(3);
+				system("cls");
+			}
 			current_player = 1;
 		}
 	}
